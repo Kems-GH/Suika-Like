@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlaceObject : MonoBehaviour
@@ -9,6 +10,8 @@ public class PlaceObject : MonoBehaviour
     private float xBound;
     private Vector3 spawnPos = new Vector3(0, 4.5f, 0);
 
+    private float delay = 0.5f;
+
 
     private void Start()
     {
@@ -18,7 +21,8 @@ public class PlaceObject : MonoBehaviour
 
     private void OnMouseDrag()
     {
-        Debug.Log("Mouse Drag");
+        if (GameManager.instance.gameOver || currentObject == null)
+            return;
         Vector3 mousePosition = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10);
         Vector3 objPosition = Camera.main.ScreenToWorldPoint(mousePosition);
         if(objPosition.x > xBound)
@@ -30,10 +34,26 @@ public class PlaceObject : MonoBehaviour
 
     private void OnMouseUp()
     {
-        Debug.Log("Mouse Up");
+        if (GameManager.instance.gameOver || currentObject == null) return;
+        if (DeathLine.instance.HasContact())
+        {
+            GameManager.instance.GameOver();
+            currentObject = null;
+            return;
+        }
         currentObject.GetComponent<Rigidbody2D>().simulated = true;
-        currentObject = Instantiate(prefab, spawnPos, prefab.transform.rotation);
-        xBound = xBoundDefault - currentObject.transform.localScale.y / 2;
+        currentObject = null;
+
+        StartCoroutine(SpawnNewForm());
     }
-    
+   
+    private IEnumerator SpawnNewForm()
+    {
+        yield return new WaitForSeconds(delay);
+        if(currentObject == null)
+        {
+            currentObject = Instantiate(prefab, spawnPos, prefab.transform.rotation);
+            xBound = xBoundDefault - currentObject.transform.localScale.y / 2;
+        }
+    }
 }
